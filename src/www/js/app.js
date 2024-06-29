@@ -5,7 +5,7 @@
 
 'use strict';
 
-const CHANGELOG_URL = 'https://raw.githubusercontent.com/spcfox/amnezia-wg-easy/production/docs/changelog.json';
+const CHANGELOG_URL = 'https://raw.githubusercontent.com/mindst0rm/amneziawg-web-ui/master/docs/changelog.json';
 
 function bytes(bytes, decimals, kib, maxunit) {
   kib = kib || false;
