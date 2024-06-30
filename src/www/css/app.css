@@ -826,6 +826,10 @@ video {
   width: 5rem;
 }
 
+.w-40 {
+  width: 10rem;
+}
+
 .w-4 {
   width: 1rem;
 }
