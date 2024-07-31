@@ -5,7 +5,7 @@
 
 'use strict';
 
-const CHANGELOG_URL = 'https://raw.githubusercontent.com/spcfox/amnezia-wg-easy/production/docs/changelog.json';
+const CHANGELOG_URL = 'https://raw.githubusercontent.com/mindst0rm/amneziawg-web-ui/master/docs/changelog.json';
 
 function bytes(bytes, decimals, kib, maxunit) {
   kib = kib || false;
@@ -49,6 +49,8 @@ new Vue({
     clientEditNameId: null,
     clientEditAddress: null,
     clientEditAddressId: null,
+    clientEditAllowedIPS: null,
+    clientEditAllowedIPSId: null,
     qrcode: null,
 
     currentRelease: null,
@@ -247,6 +249,11 @@ new Vue({
     },
     updateClientAddress(client, address) {
       this.api.updateClientAddress({ clientId: client.id, address })
+        .catch((err) => alert(err.message || err.toString()))
+        .finally(() => this.refresh().catch(console.error));
+    },
+    updateClientAllowedIPS(client, ips) {
+      this.api.updateClientAllowedIPS({ clientId: client.id, ips })
         .catch((err) => alert(err.message || err.toString()))
         .finally(() => this.refresh().catch(console.error));
     },
