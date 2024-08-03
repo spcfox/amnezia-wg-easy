@@ -1,5 +1,5 @@
 /*
-! tailwindcss v3.4.3 | MIT License | https://tailwindcss.com
+! tailwindcss v3.4.7 | MIT License | https://tailwindcss.com
 */
 
 /*
@@ -732,10 +732,6 @@ video {
 
 .mr-2 {
   margin-right: 0.5rem;
-}
-
-.mt-0 {
-  margin-top: 0px;
 }
 
 .mt-0\.5 {
@@ -1785,11 +1781,6 @@ video {
 .dark\:text-neutral-500:where(.dark, .dark *) {
   --tw-text-opacity: 1;
   color: rgb(115 115 115 / var(--tw-text-opacity));
-}
-
-.dark\:text-neutral-600:where(.dark, .dark *) {
-  --tw-text-opacity: 1;
-  color: rgb(82 82 82 / var(--tw-text-opacity));
 }
 
 .dark\:text-red-300:where(.dark, .dark *) {
