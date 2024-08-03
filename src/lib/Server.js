@@ -104,12 +104,13 @@ module.exports = class Server {
           });
         }
 
+        event.node.req.session.cookie.maxAge = 1000 * 60 * 60 * 24; // 1 day
         event.node.req.session.authenticated = true;
         event.node.req.session.save();
 
         debug(`New Session: ${event.node.req.session.id}`);
 
-        return { succcess: true };
+        return { success: true };
       }));
 
     // WireGuard
