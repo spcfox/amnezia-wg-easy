@@ -1,16 +1,14 @@
-name: Build & Publish Latest
+name: Build Pull Request
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - production
+  pull_request:
 
 jobs:
   deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'spcfox'
+    if: github.repository_owner == 'wg-easy'
     permissions:
       packages: write
       contents: read
@@ -32,12 +30,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Set environment variables
-      run: echo RELEASE=$(cat ./src/package.json | jq -r .release) >> $GITHUB_ENV
-
-    - name: Build & Publish Docker Image
-      uses: docker/build-push-action@v6
+    - name: Build Docker Image
+      uses: docker/build-push-action@v5
       with:
-        push: true
+        push: false
         platforms: linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8
-        tags: ghcr.io/spcfox/amnezia-wg-easy:latest, ghcr.io/spcfox/amnezia-wg-easy:${{ env.RELEASE }}
+        tags: ghcr.io/wg-easy/wg-easy:pr

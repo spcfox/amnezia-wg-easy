@@ -1,6 +1,5 @@
-version: "3.8"
 volumes:
-  etc_wireguard:
+  etc_amneziawg:
 
 services:
   amnezia-wg-easy:
@@ -21,4 +20,4 @@ services:
       - net.ipv4.ip_forward=1
       - net.ipv4.conf.all.src_valid_mark=1
     devices:
-    - /dev/net/tun:/dev/net/tun
+      - /dev/net/tun:/dev/net/tun
