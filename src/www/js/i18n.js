@@ -30,6 +30,8 @@ const messages = { // eslint-disable-line no-unused-vars
     donate: 'Donate',
     toggleCharts: 'Show/hide Charts',
     theme: { dark: 'Dark theme', light: 'Light theme', auto: 'Auto theme' },
+    rememberMe: 'Remember me',
+    titleRememberMe: 'Stay logged after closing the browser',
   },
   ua: {
     name: 'Ім`я',

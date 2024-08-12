@@ -55,6 +55,8 @@ new Vue({
     authenticating: false,
     password: null,
     requiresPassword: null,
+    remember: false,
+    rememberMeEnabled: false,
 
     clients: null,
     clientsPersist: {},
@@ -241,6 +243,7 @@ new Vue({
       this.authenticating = true;
       this.api.createSession({
         password: this.password,
+        remember: this.remember,
       })
         .then(async () => {
           const session = await this.api.getSession();
@@ -346,6 +349,11 @@ new Vue({
       })
       .catch((err) => {
         alert(err.message || err.toString());
+      });
+
+    this.api.getRememberMeEnabled()
+      .then((rememberMeEnabled) => {
+        this.rememberMeEnabled = rememberMeEnabled;
       });
 
     setInterval(() => {

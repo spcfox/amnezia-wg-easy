@@ -29,6 +29,7 @@ const {
   WEBUI_HOST,
   RELEASE,
   PASSWORD,
+  MAX_AGE,
   LANG,
   UI_TRAFFIC_STATS,
   UI_CHART_TYPE,
@@ -65,6 +66,11 @@ module.exports = class Server {
         return `"${LANG}"`;
       }))
 
+      .get('/api/remember-me', defineEventHandler((event) => {
+        setHeader(event, 'Content-Type', 'application/json');
+        return MAX_AGE > 0;
+      }))
+
       .get('/api/ui-traffic-stats', defineEventHandler((event) => {
         setHeader(event, 'Content-Type', 'application/json');
         return UI_TRAFFIC_STATS;
@@ -88,7 +94,7 @@ module.exports = class Server {
         };
       }))
       .post('/api/session', defineEventHandler(async (event) => {
-        const { password } = await readBody(event);
+        const { password, remember } = await readBody(event);
 
         if (typeof password !== 'string') {
           throw createError({
@@ -104,6 +110,9 @@ module.exports = class Server {
           });
         }
 
+        if (MAX_AGE && remember) {
+          event.node.req.session.cookie.maxAge = MAX_AGE;
+        }
         event.node.req.session.authenticated = true;
         event.node.req.session.save();
 
