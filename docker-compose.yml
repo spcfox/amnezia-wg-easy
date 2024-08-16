@@ -5,13 +5,10 @@ services:
   amnezia-wg-easy:
     env_file:
       - .env
-#    image: ghcr.io/spcfox/amnezia-wg-easy
-    build:
-      .
+    image: ghcr.io/spcfox/amnezia-wg-easy
     container_name: amnezia-wg-easy
     volumes:
       - ~/.amnezia-wg-easy:/etc/wireguard
-      - "./src:/app"
     ports:
       - "${WG_PORT}:51820/udp"
       - "${PORT}:${PORT}/tcp"
