@@ -20,7 +20,8 @@ COPY --from=build_node_modules /app /app
 # Install Node.js
 RUN apk add --no-cache \
     nodejs \
-    npm
+    npm \
+    python3
 
 # Move node_modules one directory up, so during development
 # we don't have to mount it in a volume.

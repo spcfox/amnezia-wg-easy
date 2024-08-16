@@ -5,6 +5,10 @@ const { createServer } = require('node:http');
 const { stat, readFile } = require('node:fs/promises');
 const { resolve, sep } = require('node:path');
 
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
+
 const expressSession = require('express-session');
 const debug = require('debug')('Server');
 
@@ -33,6 +37,12 @@ const {
   LANG,
   UI_TRAFFIC_STATS,
   UI_CHART_TYPE,
+  WG_HOST,
+  WG_PORT,
+  WG_MTU,
+  WG_DEFAULT_DNS,
+  WG_PERSISTENT_KEEPALIVE,
+  WG_ALLOWED_IPS,
 } = require('../config');
 
 module.exports = class Server {
@@ -153,25 +163,128 @@ module.exports = class Server {
       .get('/api/wireguard/client', defineEventHandler(() => {
         return WireGuard.getClients();
       }))
+      .get('/api/wireguard/client/:clientId/configuration', defineEventHandler(async (event) => {
+        const clientId = getRouterParam(event, 'clientId');
+        const client = await WireGuard.getClient({ clientId });
+        const wgconfig = await WireGuard.getConfig();
+        const publicKey = wgconfig.server.publicKey;
+        const JC = wgconfig.server.jc;
+        const JMIN = wgconfig.server.jmin;
+        const JMAX = wgconfig.server.jmax;
+        const S1 = wgconfig.server.s1;
+        const S2 = wgconfig.server.s2;
+        const H1 = wgconfig.server.h1;
+        const H2 = wgconfig.server.h2;
+        const H3 = wgconfig.server.h3;
+        const H4 = wgconfig.server.h4;
+
+
+        const clientconf = `
+[Interface]\\\\n
+Address = ${client.address}/32\\\\n
+DNS = ${WG_DEFAULT_DNS}\\\\n
+PrivateKey = ${client.privateKey}\\\\n
+Jc = ${JC}\\\\n
+Jmin = ${JMIN}\\\\n
+Jmax = ${JMAX}\\\\n
+S1 = ${S1}\\\\n
+S2 = ${S2}\\\\n
+H1 = ${H1}\\\\n
+H2 = ${H2}\\\\n
+H3 = ${H3}\\\\n
+H4 = ${H4}\\\\n\\\\n
+[Peer]\\\\nPublicKey = ${publicKey}\\\\n
+PresharedKey = ${client.preSharedKey}\\\\n
+AllowedIPs = ${WG_ALLOWED_IPS}\\\\n
+Endpoint = ${WG_HOST}:${WG_PORT}\\\\n
+PersistentKeepalive = ${WG_PERSISTENT_KEEPALIVE}\\\\n\\
+`
+        const last_config = `
+{\\n
+    \\"H1\\": \\"${H1}\\",\\n    
+    \\"H2\\": \\"${H2}\\",\\n    
+    \\"H3\\": \\"${H3}\\",\\n    
+    \\"H4\\": \\"${H4}\\",\\n    
+    \\"Jc\\": \\"${JC}\\",\\n    
+    \\"Jmax\\": \\"${JMAX}\\",\\n    
+    \\"Jmin\\": \\"${JMIN}\\",\\n    
+    \\"S1\\": \\"${S1}\\",\\n    
+    \\"S2\\": \\"${S2}\\",\\n    
+    \\"clientId\\": \\"0\\",\\n    
+    \\"client_ip\\": \\"${client.address}\\",\\n    
+    \\"client_priv_key\\": \\"${client.privateKey}\\",\\n    
+    \\"client_pub_key\\": \\"${client.publicKey}\\",\\n    
+    \\"config\\": \\"${clientconf}",\\n    
+    \\"hostName\\": \\"${WG_HOST}\\",\\n    
+    \\"mtu\\": \\"${WG_MTU}\\",\\n    
+    \\"port\\": ${WG_PORT},\\n    
+    \\"psk_key\\": \\"${client.preSharedKey}\\",\\n    
+    \\"server_pub_key\\": \\"${publicKey}\\"\\n}\\n
+`;
+      const jsonConf = `{
+  "containers": [
+      {
+          "awg": {
+              "H1": "${H1}",
+              "H2": "${H2}",
+              "H3": "${H3}",
+              "H4": "${H4}",
+              "Jc": "${JC}",
+              "Jmax": "${JMAX}",
+              "Jmin": "${JMIN}",
+              "S1": "${S1}",
+              "S2": "${S2}",
+              "last_config": "${last_config}",
+              "transport_proto": "udp"
+          },
+          "container": "amnezia-awg"
+      }
+  ],
+  "defaultContainer": "amnezia-awg",
+  "description": "${client.name}",
+  "dns1": "1.1.1.1",
+  "dns2": "1.0.0.1",
+  "hostName": "${WG_HOST}"
+}`;
+
+        const compactJson = jsonConf.replace(/\s+/g, '');
+        async function runPythonScript() {
+          try {
+            const { stdout } = await execPromise(`python3 encode.py '${compactJson}'`);
+            const encodedResult = stdout.trim();
+            return encodedResult;
+        
+          } catch (error) {
+            console.error(`Error executing script: ${error}`);
+          }
+        }
+        
+        const encodedResult = await runPythonScript();
+
+        setHeader(event, 'Content-Disposition', `attachment; filename="${client.name}.vpn"`);
+        setHeader(event, 'Content-Type', 'text/plain');
+        //return `vpn://${encodedResult}`;
+        return encodedResult;
+      }))
       .get('/api/wireguard/client/:clientId/qrcode.svg', defineEventHandler(async (event) => {
         const clientId = getRouterParam(event, 'clientId');
         const svg = await WireGuard.getClientQRCodeSVG({ clientId });
         setHeader(event, 'Content-Type', 'image/svg+xml');
         return svg;
       }))
-      .get('/api/wireguard/client/:clientId/configuration', defineEventHandler(async (event) => {
-        const clientId = getRouterParam(event, 'clientId');
-        const client = await WireGuard.getClient({ clientId });
-        const config = await WireGuard.getClientConfiguration({ clientId });
-        const configName = client.name
-          .replace(/[^a-zA-Z0-9_=+.-]/g, '-')
-          .replace(/(-{2,}|-$)/g, '-')
-          .replace(/-$/, '')
-          .substring(0, 32);
-        setHeader(event, 'Content-Disposition', `attachment; filename="${configName || clientId}.conf"`);
-        setHeader(event, 'Content-Type', 'text/plain');
-        return config;
-      }))
+//      .get('/api/wireguard/client/:clientId/configuration', defineEventHandler(async (event) => {
+//        const clientId = getRouterParam(event, 'clientId');
+//        const client = await WireGuard.getClient({ clientId });
+//        const config = await WireGuard.getClientConfiguration({ clientId });
+//        const configName = client.name
+//          .replace(/[^a-zA-Z0-9_=+.-]/g, '-')
+//          .replace(/(-{2,}|-$)/g, '-')
+//          .replace(/-$/, '')
+//          .substring(0, 32);
+//        setHeader(event, 'Content-Disposition', `attachment; filename="${configName || clientId}.conf"`);
+//        setHeader(event, 'Content-Type', 'text/plain');
+//        return config;
+//      }))
       .post('/api/wireguard/client', defineEventHandler(async (event) => {
         const { name } = await readBody(event);
         await WireGuard.createClient({ name });
